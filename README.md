@@ -91,38 +91,7 @@ Modules are precompiled and hosted to save payload space.
 
 ## Installation
 
-### Prerequisites
-- A working Redis server.
-- A Telegram bot token and Chat ID.
-- Python ( 3.11.9 is tested and working )
-
-
-
-First clone this repo and travese into it.
-
-```bash
-git clone https://github.com/glo-stick/pie-rat.git 
-```
-```bash
-cd pierat
-```
-
-Create environment and install requirements.
-
-```
-python -m venv pierat
-```
-
-```
-.\pierat\Scripts\activate.bat
-```
-
-
-```bash
-pip install -r requirements.txt
-```
-
-Edit the ```main.py``` and ```populator.py``` scripts and fill out with your configuration.
+Check the [wiki](https://github.com/glo-stick/pie-rat/wiki/Installation)
 
 ---
 
