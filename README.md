@@ -79,13 +79,13 @@ Modules are precompiled and hosted to save payload space.
 
 # Screenshots
 ---
-![screenshot](https://raw.githubusercontent.com/glo-stick/pierat/refs/heads/main/photos/computers.png)
+![screenshot](https://raw.githubusercontent.com/glo-stick/pie-rat/refs/heads/main/photos/computers.png)
 ---
-![screenshot](https://raw.githubusercontent.com/glo-stick/pierat/refs/heads/main/photos/sysinfo.png)
+![screenshot](https://raw.githubusercontent.com/glo-stick/pie-rat/refs/heads/main/photos/sysinfo.png)
 ---
-![screenshot](https://raw.githubusercontent.com/glo-stick/pierat/refs/heads/main/photos/screenshot.png)
+![screenshot](https://raw.githubusercontent.com/glo-stick/pie-rat/refs/heads/main/photos/screenshot.png)
 ---
-![screenshot](https://raw.githubusercontent.com/glo-stick/pierat/refs/heads/main/photos/msg.png)
+![screenshot](https://raw.githubusercontent.com/glo-stick/pie-rat/refs/heads/main/photos/msg.png)
 ---
 
 
