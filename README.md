@@ -89,20 +89,12 @@ Modules are precompiled and hosted to save payload space.
 ---
 
 
-## Installation
+## Installation and Usage
 
 Check the [wiki](https://github.com/glo-stick/pie-rat/wiki/Installation)
 
 ---
 
-## Usage
-
-1. Compile ```main.py``` with your favourite compiler, e.g ```pyinstaller``` ```nuitka```
-2. Run ```populator.py``` in the background of your computer.
-3. Deploy the main.py executable to target machine.
-4. On the Telegram Bot send ```/list_computers``` to list computers connected and ```/set_computer <COMPUTER_ID>``` to channel commands into that computer
-
----
 
 ## How it works.
 
