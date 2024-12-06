@@ -112,13 +112,3 @@ class NgrokProxyManager:
             shutil.rmtree(self.proxy_dir)
             print("Temporary proxy directory cleaned up.")
 
-if __name__ == "__main__":
-    # Example usage
-    ngrok_token = '2IoD8A022Xb2l5bokyF4t1oX42d_26n6KRRjyas8EKYmf314a'  # Replace with your ngrok auth token
-    manager = NgrokProxyManager(ngrok_token)
-    try:
-        ngrok_url = manager.start_all()
-        print(f'Ngrok is running at: {ngrok_url}')
-        input("Press Enter to stop all services...")
-    finally:
-        manager.stop_all()
