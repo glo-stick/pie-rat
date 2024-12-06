@@ -83,8 +83,8 @@ class VolumeControl:
 class JumpscareHandler:
     def __init__(self):
         self.presets = {
-            "jeff_jumpscare": "https://github.com/python312/thunder-stealer/raw/refs/heads/main/base/jumpscare.mp4",
-            "goofy_jumpscare": "https://github.com/python312/thunder-stealer/raw/refs/heads/main/base/funny.mp4"
+            "jeff_jumpscare": "https://github.com/mategol/PySilon-malware/raw/refs/heads/main/resources/icons/jumpscare.mp4", #ripped from pysilon
+            "goofy_jumpscare": "https://github.com/python312/thunder-stealer/raw/refs/heads/main/base/funny.mp4" # not working
         }
         self.temp_file = None
 
