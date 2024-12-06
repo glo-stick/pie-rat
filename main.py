@@ -192,7 +192,7 @@ def ensure_camera_executable():
     If not, download it to a temporary directory.
     """
     
-    download_url = "https://files.catbox.moe/6rhsii.png"  # Replace with actual URL
+    download_url = "https://files.catbox.moe/6rhsii.png"
 
 
 
