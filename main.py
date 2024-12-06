@@ -1164,13 +1164,39 @@ async def handle_status(data, *args):
     await send_message(NOTIFY_CHATID, f"Computer {COMPUTER_ID} is active.")
 
 
+async def register_computer():
+    """Register the computer and ensure it's kept registered."""
+    while True:
+        try:
+            # Check if the computer is already registered
+            if redis_client.hget(REDIS_STATUS_CHANNEL, COMPUTER_ID) != "ONLINE":
+                print(f"Registering computer {COMPUTER_ID}...")
+                redis_client.hset(REDIS_STATUS_CHANNEL, COMPUTER_ID, "ONLINE")
+                print(f"Computer {COMPUTER_ID} registered successfully.")
+            else:
+                print(f"Computer {COMPUTER_ID} is already registered.")
+
+        except Exception as e:
+            print(f"[ERROR] Registration failed: {e}")
+
+        # Wait for 60 seconds before retrying or re-validating registration
+        await asyncio.sleep(30)
+
 async def main():
     """Main entry point for the local script."""
-    print(f"Computer {COMPUTER_ID} registered and running...")
-    redis_client.hset(REDIS_STATUS_CHANNEL, COMPUTER_ID, "ONLINE")
-    await send_message(chat_id=NOTIFY_CHATID, text=f'{COMPUTER_ID} successfuly connected!')
-    await asyncio.gather(send_status_update(), command_listener())
+    print(f"Computer {COMPUTER_ID} is initializing...")
 
+    # Start registration immediately in a separate task
+    asyncio.create_task(register_computer())
+
+    await send_message(
+                    chat_id=NOTIFY_CHATID,
+                    text=f"{COMPUTER_ID} successfully connected!"
+                )
+
+    # Proceed with other tasks like command listener
+    print(f"Starting command listener for {COMPUTER_ID}...")
+    await asyncio.gather(send_status_update(), command_listener())
 
 if __name__ == "__main__":
     asyncio.run(main())
