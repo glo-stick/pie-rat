@@ -8,7 +8,7 @@ import subprocess
 import re
 import time
 import threading
-import psutil  # For managing processes
+import psutil
 
 
 class NgrokProxyManager:
