@@ -4,6 +4,8 @@
 ---
 [![](https://dcbadge.limes.pink/api/server/u5VkfQ8Ehj)](https://discord.gg/u5VkfQ8Ehj)
 ![](https://dcbadge.limes.pink/api/shield/1312773204032487445)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/t/glo-stick/pie-rat)
+
 ---
 
 
