@@ -8,7 +8,7 @@ REDIS_PORT =
 REDIS_PASS = ""
 
 # Define lock key pattern
-LOCK_KEY_PATTERN = "computer_lock:*"  # Adjust this pattern to match your lock keys
+LOCK_KEY_PATTERN = "computer_lock:*"
 
 def release_all_locks():
     """
