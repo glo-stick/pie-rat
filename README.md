@@ -47,7 +47,7 @@
 - **Message Box**: Display a message box on the target machine.
   - `/msg_box "TITLE" "CONTENT"`
 - **Jumpscare**: Play loud and frightening videos.
-  - `/jumpscare <PRESET>`
+  - `/jumpscare <PRESET (jeff_jumpscare)>` 
 - **Volume Control**:
   - `/get_volume` - Get current volume.
   - `/set_volume <INT>` - Set system volume.
