@@ -30,7 +30,7 @@ import libs.persistence as persistence_lib
 
 
 REDIS_HOST = ""
-REDIS_PORT = 00
+REDIS_PORT = 000
 REDIS_PASS = ""
 
 TELEGRAM_BOT_TOKEN = ""
