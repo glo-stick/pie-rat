@@ -148,12 +148,113 @@ def parse_redis_url(command):
         return None
 
 def process_telegram_update(update):
+    global redis_client
     logging.debug(f"Processing Telegram update: {update}")
-    # Implementation remains the same as original script
+
+    if "message" in update:
+        chat_id = update["message"]["chat"]["id"]
+        text = update["message"].get("text", "")
+
+        logging.info(f"Received message: {text} from chat_id: {chat_id}")
+
+        if text == "/list_computers":
+            list_computers(chat_id)
+        elif text.startswith("/set_computer"):
+            try:
+                _, computer_id = text.split(maxsplit=1)
+                set_computer(chat_id, computer_id)
+            except ValueError:
+                logging.warning("Invalid /set_computer command format.")
+                send_telegram_message(chat_id, "Usage: /set_computer <COMPUTER_ID>")
+        else:
+            forward_command(chat_id, text)
+
+def list_computers(chat_id):
+    logging.debug("Listing all connected computers.")
+    computers = redis_client.hgetall(REDIS_STATUS_CHANNEL)
+    now = datetime.now(timezone.utc)
+    online_computers = []
+
+    if not computers:
+        logging.info("No computers are registered in Redis.")
+        send_telegram_message(chat_id, "No computers are currently online.")
+        return
+
+    for comp_id, last_seen in computers.items():
+        try:
+            last_seen_time = datetime.fromisoformat(last_seen).replace(tzinfo=timezone.utc)
+        except ValueError:
+            try:
+                last_seen_time = datetime.fromtimestamp(float(last_seen)).replace(tzinfo=timezone.utc)
+            except (ValueError, TypeError):
+                logging.warning(f"Invalid timestamp for computer {comp_id}: {last_seen}")
+                online_computers.append(f"{comp_id} (Online)")
+                continue
+
+        time_diff = (now - last_seen_time).total_seconds()
+        if time_diff < 30:
+            online_computers.append(f"{comp_id} (Online)")
+
+    if online_computers:
+        message = "Connected Computers:\n" + "\n".join(online_computers)
+    else:
+        message = "No computers are currently online."
+
+    logging.info(f"Sending list of computers to chat_id: {chat_id}")
+    send_telegram_message(chat_id, message)
+
+def set_computer(chat_id, computer_id):
+    global redis_client
+    global selected_computer
+    logging.debug(f"Setting selected computer to: {computer_id}")
+
+    try:
+        computers = redis_client.hgetall(REDIS_STATUS_CHANNEL)
+        if computer_id in computers:
+            selected_computer = computer_id
+            redis_client.set("current_computer", computer_id)
+            send_telegram_message(chat_id, f"Selected computer: {computer_id}")
+        else:
+            send_telegram_message(chat_id, f"Computer ID {computer_id} not found.")
+    except redis.RedisError as e:
+        logging.error(f"Error accessing Redis: {e}")
+        send_telegram_message(chat_id, "Error setting computer.")
+
+def forward_command(chat_id, text):
+    global redis_client
+    global selected_computer
+    logging.debug(f"Forwarding command: {text} to selected computer: {selected_computer}")
+
+    if not selected_computer:
+        send_telegram_message(chat_id, "No computer selected. Use /set_computer <COMPUTER_ID> first.")
+        return
+
+    try:
+        command = json.dumps({
+            "target": selected_computer,
+            "chat_id": chat_id,
+            "command": text
+        })
+        redis_client.publish(REDIS_COMMAND_CHANNEL, command)
+        logging.info(f"Command sent to computer {selected_computer}: {text}")
+    except redis.RedisError as e:
+        logging.error(f"Error publishing command to Redis: {e}")
+        send_telegram_message(chat_id, "Error forwarding command.")
+
+def send_telegram_message(chat_id, text):
+    global TELEGRAM_API_URL
+    logging.debug(f"Sending message to chat_id {chat_id}: {text}")
+    try:
+        payload = {"chat_id": chat_id, "text": text}
+        response = requests.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
+        logging.debug(f"Telegram API response: {response.json()}")
+    except requests.RequestException as e:
+        logging.error(f"Error sending Telegram message: {e}")
 
 # Constants for Redis channels
 REDIS_COMMAND_CHANNEL = "commands"
 REDIS_STATUS_CHANNEL = "status"
+selected_computer = None
 
 if __name__ == "__main__":
     root = tk.Tk()
