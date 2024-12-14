@@ -4,7 +4,7 @@ import redis
 
 # Redis connection configuration
 REDIS_HOST = ""
-REDIS_PORT = 
+REDIS_PORT = 000
 REDIS_PASS = ""
 
 # Define lock key pattern
