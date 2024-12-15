@@ -2,6 +2,9 @@
 # PieRat
 **Yet another multi session Windows RAT for administrating multiple clients via a Telegram bot.**
 ---
+
+Please star, and join our Discord for support!
+
 [![](https://dcbadge.limes.pink/api/server/u5VkfQ8Ehj)](https://discord.gg/u5VkfQ8Ehj)
 ![](https://dcbadge.limes.pink/api/shield/1312773204032487445)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/t/glo-stick/pie-rat)
