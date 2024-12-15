@@ -11,9 +11,6 @@
 
 ### Disclaimer
 > This project was made for **educational purposes** as a side project. I do not condone or support any malicious activity involving this tool. Use responsibly and ethically.
->
-> - **No Support:** I will not provide installation support or a tutorial on setting up Redis Cloud to prevent misuse.
-> - **No Liability:** I am not responsible for any damages caused by the use of this tool.
 
 ---
 
