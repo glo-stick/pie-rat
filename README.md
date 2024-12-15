@@ -1,6 +1,6 @@
 
 # PieRat
-**Yet another multi session Windows RAT for administrating multiple clients via a Telegram bot.**
+**A multi session Windows RAT for administrating multiple clients via a Telegram bot.**
 ---
 
 Please star, and join our Discord for support!
