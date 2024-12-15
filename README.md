@@ -118,13 +118,9 @@ Check the [wiki](https://github.com/glo-stick/pie-rat/wiki/Installation)
 ---
 
 
-## How it works.
-
-The system operates with the ```populator.py``` script, which serves as the single poller to fetch Telegram updates and populate them into the Redis server. This approach addresses the limitation of a single bot instance being allowed to poll updates by centralizing the process through ```populator.py```. This script is only required to run while interacting with the bot. Worker processes, referred to as "zombies," connect to the Redis server to retrieve and process updates, reducing load and bypassing polling restrictions. Zombies handle tasks based on their assigned roles, reacting to updates accordingly. The Redis server also manages the assignment of specific computers by comparing their UUIDs with preconfigured values that are set in the Redis. Additionally, ```populator.py``` processes global commands, such as ```/list_computers``` and ```/set_computer```
-
 
 
 ## Acknowledgements
 
-- ChatGPT, helped me in some of the minor things / bugs.
-- Pysilon, inspired me to make this.
+- ChatGPT, helped me a lot.
+- The Pysilon Project, inspired me to make this.
