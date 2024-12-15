@@ -1,7 +1,10 @@
 
 # PieRat
-**Yet another multi session Windows RAT for administrating multiple clients via a Telegram bot.**
+**A multi session Windows RAT for administrating multiple clients via a Telegram bot.**
 ---
+
+Please star, and join our Discord for support!
+
 [![](https://dcbadge.limes.pink/api/server/u5VkfQ8Ehj)](https://discord.gg/u5VkfQ8Ehj)
 ![](https://dcbadge.limes.pink/api/shield/1312773204032487445)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/t/glo-stick/pie-rat)
@@ -11,9 +14,6 @@
 
 ### Disclaimer
 > This project was made for **educational purposes** as a side project. I do not condone or support any malicious activity involving this tool. Use responsibly and ethically.
->
-> - **No Support:** I will not provide installation support or a tutorial on setting up Redis Cloud to prevent misuse.
-> - **No Liability:** I am not responsible for any damages caused by the use of this tool.
 
 ---
 
@@ -118,13 +118,9 @@ Check the [wiki](https://github.com/glo-stick/pie-rat/wiki/Installation)
 ---
 
 
-## How it works.
-
-The system operates with the ```populator.py``` script, which serves as the single poller to fetch Telegram updates and populate them into the Redis server. This approach addresses the limitation of a single bot instance being allowed to poll updates by centralizing the process through ```populator.py```. This script is only required to run while interacting with the bot. Worker processes, referred to as "zombies," connect to the Redis server to retrieve and process updates, reducing load and bypassing polling restrictions. Zombies handle tasks based on their assigned roles, reacting to updates accordingly. The Redis server also manages the assignment of specific computers by comparing their UUIDs with preconfigured values that are set in the Redis. Additionally, ```populator.py``` processes global commands, such as ```/list_computers``` and ```/set_computer```
-
 
 
 ## Acknowledgements
 
-- ChatGPT, helped me in some of the minor things / bugs.
-- Pysilon, inspired me to make this.
+- ChatGPT, helped me a lot.
+- The Pysilon Project, inspired me to make this.
