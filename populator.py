@@ -148,26 +148,100 @@ def parse_redis_url(command):
         return None
 
 def process_telegram_update(update):
+    """
+    Process incoming Telegram updates:
+    - Detects file uploads (document, photo, video, audio, voice).
+    - Pushes file information into a Redis list named 'file_uploads'.
+    - Handles regular text messages for other commands.
+    """
     global redis_client
     logging.debug(f"Processing Telegram update: {update}")
 
+    # Ensure the update contains a message
     if "message" in update:
         chat_id = update["message"]["chat"]["id"]
-        text = update["message"].get("text", "")
+        message = update["message"]
 
-        logging.info(f"Received message: {text} from chat_id: {chat_id}")
+        # Initialize file_data to store file info
+        file_data = None
 
-        if text == "/list_computers":
-            list_computers(chat_id)
-        elif text.startswith("/set_computer"):
+        # Handle file uploads and push to Redis
+        if "document" in message:
+            file_id = message["document"]["file_id"]
+            file_name = message["document"].get("file_name", f"document_{file_id}")
+            file_data = {
+                "type": "document",
+                "file_id": file_id,
+                "file_name": file_name,
+                "chat_id": chat_id
+            }
+
+        elif "photo" in message:
+            # Get the largest photo size (last entry in the list)
+            file_id = message["photo"][-1]["file_id"]
+            file_data = {
+                "type": "photo",
+                "file_id": file_id,
+                "file_name": f"photo_{file_id}.jpg",
+                "chat_id": chat_id
+            }
+
+        elif "video" in message:
+            file_id = message["video"]["file_id"]
+            file_name = message["video"].get("file_name", f"video_{file_id}.mp4")
+            file_data = {
+                "type": "video",
+                "file_id": file_id,
+                "file_name": file_name,
+                "chat_id": chat_id
+            }
+
+        elif "audio" in message:
+            file_id = message["audio"]["file_id"]
+            file_name = message["audio"].get("file_name", f"audio_{file_id}.mp3")
+            file_data = {
+                "type": "audio",
+                "file_id": file_id,
+                "file_name": file_name,
+                "chat_id": chat_id
+            }
+
+        elif "voice" in message:
+            file_id = message["voice"]["file_id"]
+            file_data = {
+                "type": "voice",
+                "file_id": file_id,
+                "file_name": f"voice_{file_id}.ogg",
+                "chat_id": chat_id
+            }
+
+        # If a file was detected, push to Redis
+        if file_data:
             try:
-                _, computer_id = text.split(maxsplit=1)
-                set_computer(chat_id, computer_id)
-            except ValueError:
-                logging.warning("Invalid /set_computer command format.")
-                send_telegram_message(chat_id, "Usage: /set_computer <COMPUTER_ID>")
-        else:
-            forward_command(chat_id, text)
+                redis_client.rpush("file_uploads", json.dumps(file_data))
+                logging.info(f"File queued in Redis: {file_data}")
+                send_telegram_message(chat_id, f"File '{file_data['file_name']}' received and queued for processing.")
+            except redis.RedisError as e:
+                logging.error(f"Error pushing file data to Redis: {e}")
+                send_telegram_message(chat_id, "Error processing file upload. Please try again.")
+            return
+
+        # Handle regular text messages
+        text = message.get("text", "")
+        if text:
+            logging.info(f"Received message: {text} from chat_id: {chat_id}")
+
+            if text == "/list_computers":
+                list_computers(chat_id)
+            elif text.startswith("/set_computer"):
+                try:
+                    _, computer_id = text.split(maxsplit=1)
+                    set_computer(chat_id, computer_id)
+                except ValueError:
+                    logging.warning("Invalid /set_computer command format.")
+                    send_telegram_message(chat_id, "Usage: /set_computer <COMPUTER_ID>")
+            else:
+                forward_command(chat_id, text)
 
 def list_computers(chat_id):
     logging.debug("Listing all connected computers.")

