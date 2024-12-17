@@ -1,70 +1,70 @@
-**General Commands**
-/help - Display a help menu for all available commands.
-/status - Check the status of the connected computer.
-/sys_info - Retrieve system information about the target computer.
+**General Commands**  
+/help \- Display a help menu for all available commands\.  
+/status \- Check the status of the connected computer\.  
+/sys\_info \- Retrieve system information about the target computer\.  
 
-**File System Commands**
-/cd <path> - Change the current working directory.
-/pwd - Show the current working directory.
-/ls - List all files and directories in the current directory.
-/mkdir <directory_name> - Create a new directory.
-/delete <path> - Delete a file or directory.
-/move <source> <destination> - Move or rename a file or directory.
-/copy <source> <destination> - Copy a file or directory.
+**File System Commands**  
+/cd \<path\> \- Change the current working directory\.  
+/pwd \- Show the current working directory\.  
+/ls \- List all files and directories in the current directory\.  
+/mkdir \<directory\_name\> \- Create a new directory\.  
+/delete \<path\> \- Delete a file or directory\.  
+/move \<source\> \<destination\> \- Move or rename a file or directory\.  
+/copy \<source\> \<destination\> \- Copy a file or directory\.  
 
-**Process Management**
-/ps - List all active processes on the computer.
-/pskill <PID or Process Name> - Kill a process by its PID or name.
+**Process Management**  
+/ps \- List all active processes on the computer\.  
+/pskill \<PID or Process Name\> \- Kill a process by its PID or name\.  
 
-**Message and Display**
-/msg_box "Title" "Message" - Display a custom message box with a title and message.
-/jumpscare <preset_name> - Trigger a jumpscare video playback.
-/tts <text> - Convert text to speech and play the audio locally.
-/set_volume <0-100> - Set the system volume.
-/get_volume - Get the current system volume.
+**Message and Display**  
+/msg\_box "Title" "Message" \- Display a custom message box with a title and message\.  
+/jumpscare \<preset\_name\> \- Trigger a jumpscare video playback\.  
+/tts \<text\> \- Convert text to speech and play the audio locally\.  
+/set\_volume \<0\-100\> \- Set the system volume\.  
+/get\_volume \- Get the current system volume\.  
 
-**Audio Commands**
-/start_audio <file_path> - Play an audio file from a specified path.
-/stop_audio - Stop audio playback.
+**Audio Commands**  
+/start\_audio \<file\_path\> \- Play an audio file from a specified path\.  
+/stop\_audio \- Stop audio playback\.  
 
-**Keylogging**
-/start_keylogger - Start keylogging and save the logs.
-/stop_keylogger - Stop keylogging and send logs to the user.
+**Keylogging**  
+/start\_keylogger \- Start keylogging and save the logs\.  
+/stop\_keylogger \- Stop keylogging and send logs to the user\.  
 
-**Webcam and Screenshot**
-/screenshot - Take and send a screenshot of the current screen.
-/capture_webcam [camera_index] - Capture an image using the webcam.
-/list_cameras - List available cameras connected to the system.
+**Webcam and Screenshot**  
+/screenshot \- Take and send a screenshot of the current screen\.  
+/capture\_webcam \[camera\_index\] \- Capture an image using the webcam\.  
+/list\_cameras \- List available cameras connected to the system\.  
 
-**Browser and Input**
-/open_url <URL> - Open a specified URL in the browser.
-/type <text> - Simulate typing a string into the active input field.
+**Browser and Input**  
+/open\_url \<URL\> \- Open a specified URL in the browser\.  
+/type \<text\> \- Simulate typing a string into the active input field\.  
 
-**Proxy Commands**
-/set_proxy <ngrok_token> - Set up the ngrok proxy with a token.
-/start_proxy - Start the proxy.
-/stop_proxy - Stop the proxy.
+**Proxy Commands**  
+/set\_proxy \<ngrok\_token\> \- Set up the ngrok proxy with a token\.  
+/start\_proxy \- Start the proxy\.  
+/stop\_proxy \- Stop the proxy\.  
 
-**Blocking Commands**
-/block_av - Block access to antivirus-related domains.
-/unblock_av - Unblock previously blocked antivirus-related domains.
-/block_domain <domain> - Block access to a specific domain.
-/unblock_domain <domain> - Unblock access to a specific domain.
+**Blocking Commands**  
+/block\_av \- Block access to antivirus\-related domains\.  
+/unblock\_av \- Unblock previously blocked antivirus\-related domains\.  
+/block\_domain \<domain\> \- Block access to a specific domain\.  
+/unblock\_domain \<domain\> \- Unblock access to a specific domain\.  
 
-**File Encryption**
-/set_key <encryption_key> - Set the encryption key for encrypting or decrypting files.
-/encrypt_files - Encrypt all files with the specified key.
-/decrypt_files - Decrypt all files with the specified key.
+**File Encryption**  
+/set\_key \<encryption\_key\> \- Set the encryption key for encrypting or decrypting files\.  
+/encrypt\_files \- Encrypt all files with the specified key\.  
+/decrypt\_files \- Decrypt all files with the specified key\.  
 
-**Persistence Management**
-/list_persistence_methods - List available persistence methods.
-/apply_persistence <method> [stealth_name] [key_name] [destination_folder] - Apply a persistence method.
-/persistence_help <method> - Show details about a specific persistence method.
+**Persistence Management**  
+/list\_persistence\_methods \- List available persistence methods\.  
+/apply\_persistence \<method\> \[stealth\_name\] \[key\_name\] \[destination\_folder\] \- Apply a persistence method\.  
+/persistence\_help \<method\> \- Show details about a specific persistence method\.  
 
-**Stealers**
-/cookies - Extract browser cookies and send them in a ZIP file.
-/telegram_session - Steal Telegram session data, if available.
-/roblox - Extract and send Roblox session details.
+**Stealers**  
+/cookies \- Extract browser cookies and send them in a ZIP file\.  
+/telegram\_session \- Steal Telegram session data, if available\.  
+/roblox \- Extract and send Roblox session details\.  
 
-**System Utilities**
-/execute <command> - Execute a shell command and return the output.
+**System Utilities**  
+/execute \<command\> \- Execute a shell command and return the output\.  
